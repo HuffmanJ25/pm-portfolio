@@ -12,10 +12,10 @@ export const PERSON = {
 	currently: 'Open to Product Manager roles in identity, data platforms and AI-enabled workflow tools.',
 };
 
-// The master resume lives in Google Docs. This link exports the live version as a PDF,
-// so it is always current. The Doc must be shared as "Anyone with the link: Viewer".
-export const RESUME_DOC_ID = '1xSPwTVkvwlJ4xLAnqP27_Y0thcxuR98Mh_A-V3t8tXc';
-export const RESUME_PDF_URL = `https://docs.google.com/document/d/${RESUME_DOC_ID}/export?format=pdf`;
+// Public resume PDF, served from this site (public/resume.pdf). It is exported from the private
+// Google Doc "Joel Huffman - Resume (Public)", a redacted copy of the master resume.
+// Keep it in sync with scripts/RESUME-SYNC.md; never publish the master Doc directly.
+export const RESUME_PDF_URL = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/resume.pdf`;
 
 export const LINKS = {
 	email: 'HuffmanJ25@gmail.com',
