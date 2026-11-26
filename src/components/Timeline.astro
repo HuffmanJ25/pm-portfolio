@@ -1,0 +1,492 @@
+---
+// Interactive career timeline.
+// Desktop/tablet: a horizontal track you can drag, scroll, or step through with the arrow buttons/keys.
+// Phones (< 720px): the same entries stack vertically.
+import { formatRange, timeline, type TimelineEntry } from '../data/timeline';
+import { url } from '../lib/url';
+import Icon from './Icon.astro';
+
+interface Props {
+	/** Entry id to bring into view first */
+	focus?: string;
+	/** Prefix for element ids, so the component can appear twice on a page */
+	idPrefix?: string;
+}
+
+const { focus = 'ctm', idPrefix = 'tl' } = Astro.props;
+const kindLabel: Record<TimelineEntry['kind'], string> = {
+	role: 'Role',
+	milestone: 'Milestone',
+	project: 'Project',
+	now: 'Now',
+};
+---
+
+<section class="timeline" data-timeline data-focus={focus} aria-label="Career timeline">
+	<div class="tl-bar">
+		<p class="tl-hint">
+			<span class="desktop-only">Drag, scroll or use the arrows to explore.</span>
+			<span class="mobile-only">Tap a role to see details.</span>
+		</p>
+		<div class="tl-nav desktop-only">
+			<button type="button" class="tl-step" data-dir="-1" aria-label="Earlier"><Icon name="arrow-left" /></button>
+			<button type="button" class="tl-step" data-dir="1" aria-label="Later"><Icon name="arrow-right" /></button>
+		</div>
+	</div>
+
+	<div class="tl-viewport">
+		<ol class="tl-track" tabindex="0" aria-label="Timeline entries, scroll horizontally">
+			{
+				timeline.map((entry) => {
+					const moreId = `${idPrefix}-${entry.id}-more`;
+					const hasMore = entry.details.length > 0 || entry.skills || entry.link;
+					return (
+						<li class={`tl-item kind-${entry.kind}`} data-id={entry.id}>
+							<p class="tl-date">{formatRange(entry)}</p>
+							<span class="tl-dot" aria-hidden="true" />
+							<article class="tl-card">
+								<p class="tl-org">
+									<span class="tl-kind">{kindLabel[entry.kind]}</span>
+									{entry.org}
+								</p>
+								<h3>{entry.title}</h3>
+								<p class="tl-headline">{entry.headline}</p>
+								{hasMore && (
+									<>
+										<button type="button" class="tl-toggle" aria-expanded="false" aria-controls={moreId}>
+											<span class="when-closed">More details</span>
+											<span class="when-open">Less</span>
+										</button>
+										<div class="tl-more" id={moreId} hidden>
+											{entry.details.length > 0 && (
+												<ul>
+													{entry.details.map((d) => (
+														<li>{d}</li>
+													))}
+												</ul>
+											)}
+											{entry.skills && (
+												<ul class="chips">
+													{entry.skills.map((s) => (
+														<li class="chip">{s}</li>
+													))}
+												</ul>
+											)}
+											{entry.link && (
+												<a class="tl-link" href={url(entry.link.href)}>
+													{entry.link.label} <Icon name="arrow-right" />
+												</a>
+											)}
+										</div>
+									</>
+								)}
+							</article>
+						</li>
+					);
+				})
+			}
+		</ol>
+	</div>
+</section>
+
+<style>
+	.timeline {
+		--item-w: 330px;
+		--gap: 1.25rem;
+		--dot: 18px;
+		--line-y: 3.1rem;
+	}
+	.tl-bar {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 1rem;
+		margin-bottom: 0.5rem;
+	}
+	.tl-hint {
+		margin: 0;
+		font-size: 0.9rem;
+		color: var(--ink-soft);
+	}
+	.tl-nav {
+		display: flex;
+		gap: 0.5rem;
+	}
+	.tl-step {
+		display: grid;
+		place-items: center;
+		width: 44px;
+		height: 44px;
+		border-radius: 50%;
+		border: 1.5px solid var(--line);
+		background: var(--surface);
+		color: var(--ink);
+		cursor: pointer;
+		transition: border-color 0.2s ease, transform 0.2s ease;
+	}
+	.tl-step:hover:not(:disabled) {
+		border-color: var(--accent);
+		transform: translateY(-1px);
+	}
+	.tl-step:disabled {
+		opacity: 0.35;
+		cursor: default;
+	}
+
+	.tl-viewport {
+		position: relative;
+	}
+	/* Soft fade at the edges hints that there is more to scroll */
+	.tl-viewport::before,
+	.tl-viewport::after {
+		content: '';
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		width: 48px;
+		z-index: 2;
+		pointer-events: none;
+		transition: opacity 0.2s ease;
+	}
+	.tl-viewport::before {
+		left: 0;
+		background: linear-gradient(to right, var(--bg), transparent);
+	}
+	.tl-viewport::after {
+		right: 0;
+		background: linear-gradient(to left, var(--bg), transparent);
+	}
+	.timeline[data-at-start] .tl-viewport::before,
+	.timeline[data-at-end] .tl-viewport::after {
+		opacity: 0;
+	}
+
+	.tl-track {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--gap);
+		list-style: none;
+		margin: 0;
+		padding: 0.5rem 1.5rem 1.5rem;
+		overflow-x: auto;
+		scroll-snap-type: x proximity;
+		scroll-padding-inline: 1.5rem;
+		scrollbar-width: thin;
+		scrollbar-color: var(--line) transparent;
+		cursor: grab;
+		user-select: none;
+	}
+	.tl-track.dragging {
+		cursor: grabbing;
+		scroll-snap-type: none;
+	}
+	.tl-track:focus-visible {
+		outline-offset: -3px;
+	}
+
+	.tl-item {
+		position: relative;
+		flex: 0 0 var(--item-w);
+		scroll-snap-align: start;
+	}
+	/* The line connecting the dots, drawn per item so it spans the whole scroll width */
+	.tl-item::before {
+		content: '';
+		position: absolute;
+		top: var(--line-y);
+		left: 0;
+		right: calc(var(--gap) * -1);
+		height: 2px;
+		background: var(--line);
+	}
+	.tl-item:last-child::before {
+		right: 50%;
+	}
+	.tl-date {
+		margin: 0 0 0.9rem;
+		height: 1.6rem;
+		font-weight: 700;
+		font-size: 0.9rem;
+		color: var(--ink-soft);
+		white-space: nowrap;
+	}
+	.tl-dot {
+		position: relative;
+		display: block;
+		width: var(--dot);
+		height: var(--dot);
+		margin: 0 0 1rem 1.25rem;
+		border-radius: 50%;
+		background: var(--accent);
+		box-shadow: 0 0 0 5px var(--bg);
+		z-index: 1;
+	}
+	.kind-milestone .tl-dot {
+		background: var(--sage);
+		border-radius: 5px;
+		transform: rotate(45deg) scale(0.85);
+	}
+	.kind-project .tl-dot {
+		background: var(--bg);
+		border: 4px solid var(--sage);
+	}
+	.kind-now .tl-dot {
+		background: var(--sage);
+	}
+	@media (prefers-reduced-motion: no-preference) {
+		.kind-now .tl-dot::after {
+			content: '';
+			position: absolute;
+			inset: 0;
+			border-radius: 50%;
+			border: 2px solid var(--sage);
+			animation: pulse 2.2s ease-out infinite;
+		}
+	}
+	@keyframes pulse {
+		to {
+			transform: scale(2.4);
+			opacity: 0;
+		}
+	}
+
+	.tl-card {
+		background: var(--surface);
+		border: 1px solid var(--line);
+		border-radius: var(--radius);
+		padding: 1.25rem 1.25rem 1rem;
+		box-shadow: var(--shadow);
+		transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+	}
+	.tl-item:hover .tl-card,
+	.tl-item.open .tl-card {
+		box-shadow: var(--shadow-lift);
+		border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+	}
+	.tl-item:hover .tl-card {
+		transform: translateY(-3px);
+	}
+	.tl-org {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+		margin: 0 0 0.35rem;
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--ink-soft);
+	}
+	.tl-kind {
+		font-size: 0.7rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		padding: 0.15em 0.6em;
+		border-radius: 999px;
+		background: var(--accent-soft);
+		color: var(--accent-ink);
+	}
+	.kind-milestone .tl-kind,
+	.kind-project .tl-kind,
+	.kind-now .tl-kind {
+		background: var(--sage-soft);
+		color: var(--sage);
+	}
+	.tl-card h3 {
+		font-size: 1.2rem;
+		margin-bottom: 0.5rem;
+	}
+	.tl-headline {
+		margin: 0 0 0.75rem;
+		font-size: 0.97rem;
+	}
+	.tl-toggle {
+		padding: 0.35em 0.85em;
+		border-radius: 999px;
+		border: 1.5px solid var(--line);
+		background: transparent;
+		color: var(--accent-ink);
+		font: inherit;
+		font-size: 0.85rem;
+		font-weight: 700;
+		cursor: pointer;
+	}
+	.tl-toggle:hover {
+		border-color: var(--accent);
+	}
+	.tl-toggle .when-open,
+	.tl-toggle[aria-expanded='true'] .when-closed {
+		display: none;
+	}
+	.tl-toggle[aria-expanded='true'] .when-open {
+		display: inline;
+	}
+	.tl-more {
+		margin-top: 0.9rem;
+		font-size: 0.93rem;
+		user-select: text;
+	}
+	.tl-more > ul:not(.chips) {
+		padding-left: 1.1em;
+		margin: 0 0 0.9rem;
+	}
+	.tl-more > ul:not(.chips) li {
+		margin-bottom: 0.4em;
+	}
+	.tl-more li::marker {
+		color: var(--accent);
+	}
+	.tl-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		margin-top: 0.9rem;
+		font-weight: 700;
+	}
+	.tl-link svg {
+		width: 1em;
+		height: 1em;
+	}
+
+	.mobile-only {
+		display: none;
+	}
+
+	/* Phones: stack vertically with the line on the left */
+	@media (max-width: 719px) {
+		.desktop-only,
+		.tl-viewport::before,
+		.tl-viewport::after {
+			display: none;
+		}
+		.mobile-only {
+			display: inline;
+		}
+		.tl-track {
+			flex-direction: column;
+			gap: 1.5rem;
+			overflow: visible;
+			padding: 0.5rem 0 0 0;
+			cursor: auto;
+			user-select: auto;
+		}
+		.tl-item {
+			flex: none;
+			width: 100%;
+			padding-left: 2.25rem;
+		}
+		.tl-item::before {
+			top: 0.4rem;
+			bottom: -1.5rem;
+			left: calc(var(--dot) / 2 - 1px);
+			right: auto;
+			width: 2px;
+			height: auto;
+		}
+		.tl-item:last-child::before {
+			bottom: auto;
+			height: 1rem;
+		}
+		.tl-dot {
+			position: absolute;
+			left: 0;
+			top: 0.15rem;
+			margin: 0;
+		}
+		.tl-date {
+			height: auto;
+			margin-bottom: 0.4rem;
+		}
+	}
+</style>
+
+<script>
+	function setup(root: HTMLElement) {
+		const track = root.querySelector<HTMLOListElement>('.tl-track')!;
+		const steps = root.querySelectorAll<HTMLButtonElement>('.tl-step');
+		const isHorizontal = () => getComputedStyle(track).flexDirection === 'row';
+
+		// Expand / collapse a card
+		root.querySelectorAll<HTMLButtonElement>('.tl-toggle').forEach((btn) => {
+			btn.addEventListener('click', () => {
+				const open = btn.getAttribute('aria-expanded') !== 'true';
+				btn.setAttribute('aria-expanded', String(open));
+				document.getElementById(btn.getAttribute('aria-controls')!)!.hidden = !open;
+				btn.closest('.tl-item')!.classList.toggle('open', open);
+			});
+		});
+
+		// Edge state for the fade masks and arrow buttons
+		const update = () => {
+			const atStart = track.scrollLeft <= 4;
+			const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 4;
+			root.toggleAttribute('data-at-start', atStart);
+			root.toggleAttribute('data-at-end', atEnd);
+			steps[0].disabled = atStart;
+			steps[1].disabled = atEnd;
+		};
+		track.addEventListener('scroll', update, { passive: true });
+		window.addEventListener('resize', update);
+
+		// Arrow buttons move one card at a time
+		const stepSize = () => {
+			const item = track.querySelector<HTMLElement>('.tl-item')!;
+			return item.offsetWidth + parseFloat(getComputedStyle(track).columnGap || '0');
+		};
+		steps.forEach((btn) =>
+			btn.addEventListener('click', () => {
+				track.scrollBy({ left: Number(btn.dataset.dir) * stepSize(), behavior: 'smooth' });
+			}),
+		);
+
+		// Click-and-drag with a mouse (touch already scrolls natively)
+		let startX = 0;
+		let startScroll = 0;
+		let pointerId: number | null = null;
+		let dragged = false;
+		track.addEventListener('pointerdown', (e) => {
+			if (e.pointerType !== 'mouse' || e.button !== 0 || !isHorizontal()) return;
+			pointerId = e.pointerId;
+			startX = e.clientX;
+			startScroll = track.scrollLeft;
+			dragged = false;
+		});
+		track.addEventListener('pointermove', (e) => {
+			if (e.pointerId !== pointerId) return;
+			const dx = e.clientX - startX;
+			if (!dragged && Math.abs(dx) > 6) {
+				dragged = true;
+				track.classList.add('dragging');
+				track.setPointerCapture(e.pointerId);
+			}
+			if (dragged) track.scrollLeft = startScroll - dx;
+		});
+		const end = (e: PointerEvent) => {
+			if (e.pointerId !== pointerId) return;
+			pointerId = null;
+			track.classList.remove('dragging');
+		};
+		track.addEventListener('pointerup', end);
+		track.addEventListener('pointercancel', end);
+		// A drag shouldn't also count as a click on a button or link inside a card
+		track.addEventListener(
+			'click',
+			(e) => {
+				if (dragged) {
+					e.preventDefault();
+					e.stopPropagation();
+					dragged = false;
+				}
+			},
+			true,
+		);
+
+		// Start with the most relevant entry in view
+		const focus = track.querySelector<HTMLElement>(`[data-id="${root.dataset.focus}"]`);
+		if (focus && isHorizontal()) {
+			track.scrollLeft = focus.offsetLeft - track.offsetLeft - 24;
+		}
+		update();
+	}
+
+	document.querySelectorAll<HTMLElement>('[data-timeline]').forEach(setup);
+</script>

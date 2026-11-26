@@ -12,6 +12,12 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["scripts/serve-snapshot.mjs", "v1", "4400"],
       "port": 4400
+    },
+    {
+      "name": "v2-snapshot",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve-snapshot.mjs", "v2", "4401"],
+      "port": 4401
     }
   ]
 }

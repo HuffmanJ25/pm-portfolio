@@ -1,0 +1,101 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { url } from '../lib/url';
+import Icon from './Icon.astro';
+
+interface Props {
+	entry: CollectionEntry<'work'>;
+}
+const { entry } = Astro.props;
+const { title, summary, org, timeframe, outcomes, tags } = entry.data;
+const lead = outcomes[0];
+---
+
+<article class="work-card">
+	<p class="meta">{org} · {timeframe}</p>
+	<h3><a href={url(`/work/${entry.id}/`)}>{title}</a></h3>
+	{
+		lead && (
+			<p class="lead">
+				<strong>{lead.value}</strong> {lead.label}
+			</p>
+		)
+	}
+	<p class="summary">{summary}</p>
+	<ul class="chips">{tags.map((t) => <li class="chip">{t}</li>)}</ul>
+	<span class="more" aria-hidden="true">Read case study <Icon name="arrow-right" /></span>
+</article>
+
+<style>
+	.work-card {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		padding: 1.5rem;
+		background: var(--surface);
+		border: 1px solid var(--line);
+		border-radius: var(--radius);
+		box-shadow: var(--shadow);
+		transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+	}
+	.work-card:hover,
+	.work-card:focus-within {
+		transform: translateY(-4px);
+		box-shadow: var(--shadow-lift);
+		border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+	}
+	.meta {
+		margin: 0 0 0.5rem;
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--ink-soft);
+	}
+	h3 {
+		font-size: 1.35rem;
+	}
+	h3 a {
+		color: var(--ink);
+		text-decoration: none;
+	}
+	/* Whole card is clickable */
+	h3 a::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: var(--radius);
+	}
+	.lead {
+		margin: 0 0 0.75rem;
+		padding: 0.6rem 0.85rem;
+		border-radius: var(--radius-sm);
+		background: var(--accent-soft);
+		font-size: 0.95rem;
+	}
+	.lead strong {
+		color: var(--accent-ink);
+		font-family: var(--font-display);
+		font-size: 1.15rem;
+	}
+	.summary {
+		color: var(--ink-soft);
+		font-size: 0.97rem;
+		flex: 1;
+	}
+	.more {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		margin-top: 1rem;
+		font-weight: 700;
+		color: var(--accent-ink);
+	}
+	.more :global(svg) {
+		width: 1em;
+		height: 1em;
+		transition: transform 0.2s ease;
+	}
+	.work-card:hover .more :global(svg) {
+		transform: translateX(4px);
+	}
+</style>

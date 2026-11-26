@@ -1,0 +1,152 @@
+---
+import { getCollection, render } from 'astro:content';
+import Icon from '../../components/Icon.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { url } from '../../lib/url';
+
+export async function getStaticPaths() {
+	const work = (await getCollection('work', ({ data }) => !data.draft)).sort((a, b) => a.data.order - b.data.order);
+	return work.map((entry, i) => ({
+		params: { slug: entry.id },
+		props: { entry, next: work[(i + 1) % work.length] },
+	}));
+}
+
+const { entry, next } = Astro.props;
+const { Content } = await render(entry);
+const { title, summary, org, role, timeframe, outcomes, tags } = entry.data;
+---
+
+<BaseLayout title={title} description={summary}>
+	<article class="section">
+		<div class="container">
+			<a class="back" href={url('/work/')}><Icon name="arrow-left" /> All work</a>
+			<header class="head">
+				<span class="eyebrow">Case study · {org}</span>
+				<h1>{title}</h1>
+				<p class="lede">{summary}</p>
+				<dl class="facts">
+					<div><dt>Role</dt><dd>{role}</dd></div>
+					<div><dt>When</dt><dd>{timeframe}</dd></div>
+					<div><dt>Focus</dt><dd>{tags.join(', ')}</dd></div>
+				</dl>
+			</header>
+
+			{
+				outcomes.length > 0 && (
+					<ul class="outcomes" aria-label="Results">
+						{outcomes.map((o) => (
+							<li>
+								<strong>{o.value}</strong>
+								<span>{o.label}</span>
+							</li>
+						))}
+					</ul>
+				)
+			}
+
+			<div class="prose body">
+				<Content />
+			</div>
+
+			{
+				next && next.id !== entry.id && (
+					<a class="next" href={url(`/work/${next.id}/`)}>
+						<span>Next case study</span>
+						<strong>{next.data.title}</strong>
+						<Icon name="arrow-right" />
+					</a>
+				)
+			}
+		</div>
+	</article>
+</BaseLayout>
+
+<style>
+	.back {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-weight: 700;
+		text-decoration: none;
+		margin-bottom: 2rem;
+	}
+	.back :global(svg) {
+		width: 1em;
+		height: 1em;
+	}
+	.head {
+		max-width: 820px;
+	}
+	.facts {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1rem 2.5rem;
+		margin: 1.5rem 0 0;
+	}
+	.facts dt {
+		font-size: 0.75rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--sage);
+	}
+	.facts dd {
+		margin: 0;
+		font-weight: 700;
+	}
+	.outcomes {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+		gap: 1rem;
+		list-style: none;
+		padding: 0;
+		margin: 2.5rem 0;
+	}
+	.outcomes li {
+		padding: 1.25rem;
+		border-radius: var(--radius);
+		background: var(--accent-soft);
+	}
+	.outcomes strong {
+		display: block;
+		font-family: var(--font-display);
+		font-size: 2rem;
+		line-height: 1.1;
+		color: var(--accent-ink);
+	}
+	.outcomes span {
+		font-size: 0.93rem;
+	}
+	.body {
+		margin-top: 1rem;
+	}
+	.next {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+		margin-top: 4rem;
+		padding: 1.5rem;
+		border-radius: var(--radius);
+		border: 1px solid var(--line);
+		background: var(--surface);
+		color: var(--ink);
+		text-decoration: none;
+		box-shadow: var(--shadow);
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+	}
+	.next:hover {
+		transform: translateY(-3px);
+		box-shadow: var(--shadow-lift);
+	}
+	.next span {
+		color: var(--ink-soft);
+		font-size: 0.9rem;
+	}
+	.next strong {
+		font-family: var(--font-display);
+		font-size: 1.2rem;
+		flex: 1;
+	}
+</style>

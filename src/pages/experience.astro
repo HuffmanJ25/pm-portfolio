@@ -1,0 +1,115 @@
+---
+import Icon from '../components/Icon.astro';
+import Timeline from '../components/Timeline.astro';
+import { RESUME_PDF_URL } from '../consts';
+import { education, skills } from '../data/timeline';
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+	title="Experience"
+	description="Joel Huffman's career timeline: product roles in travel, hospitality and fintech, plus skills and education."
+>
+	<section class="section">
+		<div class="container">
+			<span class="eyebrow">Experience</span>
+			<h1>From hotel front desks to global platforms</h1>
+			<p class="lede">
+				I started in data quality, learned products by watching hotel staff use them, and grew into owning a platform
+				used by millions of travelers. Open any card for the details.
+			</p>
+			<a class="btn btn-primary" href={RESUME_PDF_URL} target="_blank" rel="noopener">
+				<Icon name="download" /> Download the full resume (PDF)
+			</a>
+		</div>
+	</section>
+
+	<section class="container timeline-wrap">
+		<Timeline idPrefix="exp" focus="cendyn-early" />
+	</section>
+
+	<section class="section">
+		<div class="container two-col">
+			<div>
+				<h2>Skills</h2>
+				{
+					Object.entries(skills).map(([group, items]) => (
+						<div class="skill-group">
+							<h3>{group}</h3>
+							<ul class="chips">
+								{items.map((s) => (
+									<li class="chip">{s}</li>
+								))}
+							</ul>
+						</div>
+					))
+				}
+			</div>
+			<div>
+				<h2>Education & certifications</h2>
+				<ul class="edu">
+					{
+						education.map((e) => (
+							<li>
+								<strong>{e.title}</strong>
+								<span>{e.org}</span>
+							</li>
+						))
+					}
+				</ul>
+			</div>
+		</div>
+	</section>
+</BaseLayout>
+
+<style>
+	.lede {
+		margin-bottom: 1.5rem;
+	}
+	.timeline-wrap {
+		margin-top: -1.5rem;
+	}
+	.two-col {
+		display: grid;
+		grid-template-columns: 1.3fr 1fr;
+		gap: 3rem;
+	}
+	.skill-group {
+		margin-bottom: 1.5rem;
+	}
+	.skill-group h3 {
+		font-family: var(--font-body);
+		font-size: 0.85rem;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--sage);
+		margin-bottom: 0.6rem;
+	}
+	.skill-group .chip {
+		font-size: 0.9rem;
+		padding: 0.3em 0.85em;
+		background: var(--surface);
+		border: 1px solid var(--line);
+	}
+	.edu {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+	.edu li {
+		display: flex;
+		flex-direction: column;
+		padding: 0.9rem 0 0.9rem 1rem;
+		border-left: 3px solid var(--accent-soft);
+		margin-bottom: 0.5rem;
+	}
+	.edu span {
+		color: var(--ink-soft);
+		font-size: 0.93rem;
+	}
+	@media (max-width: 800px) {
+		.two-col {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>
