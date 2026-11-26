@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "astro-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 4321
+    },
+    {
+      "name": "v1-snapshot",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve-snapshot.mjs", "v1", "4400"],
+      "port": 4400
+    }
+  ]
+}
