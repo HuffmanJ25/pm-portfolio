@@ -27,8 +27,10 @@ Claude to "sync my resume" at any time.
 7. **Swap the public copy.** Trash the previous public copy (its ID is in `publicDocId`; it was made by
    this process), then update `scripts/resume-sync.json` with the new `publicDocId`, the master's
    `masterModifiedTime` and `syncedAt`.
-8. **Publish.** Run `npm run build` to confirm the site builds, then commit `public/resume.pdf` and
-   `scripts/resume-sync.json` on `main` ("Sync public resume") and push. The deploy runs automatically.
+8. **Commit, then ask before publishing.** Run `npm run build` to confirm the site builds, then commit
+   `public/resume.pdf` and `scripts/resume-sync.json` on `main` ("Sync public resume"). Do **not** push:
+   report what changed in the resume and ask Joel to approve. Once he approves, `git push origin main`
+   publishes it (the deploy runs automatically).
 9. **Flag timeline drift.** If roles, titles, dates or headline outcomes in the master no longer match
    `src/data/timeline.ts`, don't edit the site: tell Joel what changed so he can approve an update.
 
